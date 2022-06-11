@@ -1,18 +1,21 @@
 from rest_framework import serializers
-from ..serializers import UserSerializer, ShipmentLabelSerializer, ProductSerializer
-from ..models import User, Product, Shipment
-from ..repos import UserRepo, ProductRepo
+from shipment_gateway.settings import PRICE_PER_KG
+from ..serializers import UserSerializer, ShipmentLabelSerializer, ProductSerializer, CourierSerializer
+from ..models import User, Product, Shipment, ShipmentLabel, Courier
+from ..repos import UserRepo, ProductRepo, CourierRepo
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 ## Get Serializer ##
 
 class ShipmentSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
+    courier = CourierSerializer(read_only=True)
     product = ProductSerializer(read_only=True)
     sender = UserSerializer(read_only=True)
     reciever = UserSerializer(read_only=True)
-    origin =  serializers.CharField(read_only=True)
-    destination = serializers.CharField(read_only=True)
+    pickup_country =  serializers.CharField(read_only=True)
+    destination_country = serializers.CharField(read_only=True)
     service_type = serializers.CharField(read_only=True)
     status = serializers.CharField(read_only=True)
     label = ShipmentLabelSerializer(read_only=True)
@@ -26,13 +29,15 @@ class ShipmentSerializer(serializers.Serializer):
 ## Create Serializer ##
 
 class ShipmentCreateSerializer(serializers.Serializer):
+    courier_id = serializers.CharField(allow_null=True, min_length=1, max_length=150, help_text='Courier ID.')
     product_id = serializers.CharField(allow_null=True, min_length=1, max_length=150, help_text='Product ID.')
     sender_id = serializers.IntegerField(min_value=1, help_text='Sender ID.')
-    reciever_id = serializers.IntegerField(min_value=1, help_text='Sender ID.')
-    pickup_country =  serializers.CharField(required=False, max_length=150, help_text='Pickup Country.')
-    destination_country =  serializers.CharField(required=False, max_length=150, help_text='Destination Country.')
+    reciever_id = serializers.IntegerField(min_value=1, help_text='Reciever ID.')
+    pickup_country =  serializers.CharField(max_length=150, help_text='Pickup Country.')
+    destination_country =  serializers.CharField(max_length=150, help_text='Destination Country.')
     description = serializers.CharField(required=False, max_length=150, help_text='Description.')
 
+    courier: Courier
     sender: User
     reciever: User
     product: Product
@@ -42,6 +47,7 @@ class ShipmentCreateSerializer(serializers.Serializer):
         self.sender = None
         self.reciever = None
         self.product = None
+        self.courier = None
 
     def validate_sender_id(self, sender_id):
         self.sender = UserRepo().get_user(sender_id)
@@ -58,9 +64,49 @@ class ShipmentCreateSerializer(serializers.Serializer):
         if self.product is None: raise ValidationError('Product not found.')
         return prodcut_id
 
+    def validate_courier_id(self, courier_id):
+        self.courier = CourierRepo().get_courier(courier_id)
+        if self.courier is None: raise ValidationError('Courier not found.')
+        return courier_id
+
     def create(self, validated_data):
+        
+        validated_data['cost'] = (self.product.amount*self.product.weight) * PRICE_PER_KG
         shipment = Shipment.objects.create(**validated_data)
+        
+        del validated_data['courier_id']
+        shipment.label = ShipmentLabel.objects.create(**validated_data, weight=self.product.weight, amount=self.product.amount)
+        
+        shipment.save()
         return shipment
 
     class Meta:
         ref_name = None
+
+
+## Update Serializer ##
+class ShipmentUpdateSerializer(serializers.Serializer):
+    shipment_canceled = serializers.BooleanField(required=False, help_text='cancel shipment.')
+    status = serializers.CharField(required=False, help_text='status.')
+
+    def validate(self, data):
+        errors = {}
+        if 'shipment_canceled' in data and data['shipment_canceled']:
+            print(self.instance.courier.can_cancel_shipment)
+            if self.instance.courier is not None and not self.instance.courier.can_cancel_shipment:
+                errors['shipment_canceled'] = ['Unable to cancel shipment']
+        if len(errors.keys()) > 0: raise ValidationError(errors)
+        return data
+
+    def update(self, instance, validated_data):
+        print(self.context['request'].user)
+        instance.shipment_canceled = validated_data.get('shipment_canceled', instance.shipment_canceled)
+        instance.status = validated_data.get('status', instance.status)
+        instance.save()
+
+
+        return instance
+
+    class Meta:
+        ref_name = None
+
