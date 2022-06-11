@@ -19,6 +19,7 @@ Shipment_ServiceTypesChoises = [
 ]
 
 class Shipment(BaseModel):
+    courier = models.ForeignKey('Courier', on_delete=models.SET_NULL, null=True, related_name='shipment_courier')
     product = models.ForeignKey('Product', on_delete=models.DO_NOTHING, null=True, related_name='shipment_product')
     sender = models.ForeignKey('User', on_delete=models.DO_NOTHING, null=True, related_name='shipment_sender')
     reciever = models.ForeignKey('User', on_delete=models.DO_NOTHING, null=True, related_name='shipment_reciever')
@@ -29,7 +30,7 @@ class Shipment(BaseModel):
     label = models.ForeignKey('ShipmentLabel', null=True, on_delete=models.DO_NOTHING, related_name='shipment_label')
     description = models.TextField(default='')
     cost = models.DecimalField(max_digits=10, decimal_places=3, null=True)
-
+    shipment_canceled = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
 
