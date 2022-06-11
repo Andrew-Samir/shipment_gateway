@@ -118,7 +118,7 @@ USE_L10N = True
 
 USE_TZ = True
 
-
+PRICE_PER_KG = 20
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
