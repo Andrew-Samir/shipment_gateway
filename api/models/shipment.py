@@ -2,12 +2,8 @@ from ._base_model import BaseModel
 from django.db import models
 
 Shipment_StatusChoises = [
-    ('label_pending', 'Shipment label is pending.'),
-    ('label_rejected', 'Shipment label rejected.'),
-    ('label_ready', 'Shipment label is ready.'),
-    ('pick_up_in_progress', 'Pickup/Drop off in progress.'),
+    ('processing', 'shipment is processing.'),
     ('in_transit', 'Shipment in transit.'),
-    ('out_for_delivery', 'Shipment is out for delivery.'),
     ('shipped', 'Shipment completed.')
 ]
 

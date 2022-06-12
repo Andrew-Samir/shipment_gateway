@@ -7,6 +7,7 @@ from django.db import transaction
 from ..serializers import ShipmentSerializer, ShipmentCreateSerializer, ShipmentUpdateSerializer
 from ..utils._init_ import SuccessResponse, ErrorHelper, ErrorResponse
 from ..repos import ShipmentRepo
+from ..status_mapper import StatusMapperFactory
 
 class ShipmentView(ViewSet):
 
@@ -44,9 +45,18 @@ class ShipmentView(ViewSet):
     def get_shipment_status(self, request: Request, id: int):
         
         ## To-do: Get Courier status after integration with aramex
+        ## Will call status mapper factory after status response from aramex
+        #  status = StatusMapperFactory.get_system_status(StatusMapperFactory, 'aramex', 'Shipment created')
+        #  return SuccessResponse(status)
+
         shipment = ShipmentRepo().get_shipment(id)
         if shipment is None: return ErrorResponse([ErrorHelper.NOT_FOUND()], status.HTTP_404_NOT_FOUND, request)
 
         return SuccessResponse(shipment.status)
 
-        pass
+    ## TODO
+    # Implement with real courier (Aramex)
+    
+    ## TODO
+    # Cron job to map dynamically shipment status from real courier
+    # and store it in db
