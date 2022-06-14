@@ -34,6 +34,7 @@ Implementation for shipment gateway
 git clone https://github.com/Andrew-Samir/shipment_gateway
 ```
 2- Open Anaconda Prompt from start menu
+
 3- Head to project directory
 ```
 cd shipment_gateway
