@@ -26,7 +26,7 @@ class Shipment(BaseModel):
     label = models.ForeignKey('ShipmentLabel', null=True, on_delete=models.DO_NOTHING, related_name='shipment_label')
     description = models.TextField(default='')
     cost = models.DecimalField(max_digits=10, decimal_places=3, null=True)
-    tracking_number = models.IntegerField(null=True)
+    tracking_number = models.BigIntegerField(null=True)
     shipment_canceled = models.BooleanField(default=False)
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)

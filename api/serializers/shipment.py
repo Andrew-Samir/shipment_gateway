@@ -21,7 +21,7 @@ class ShipmentSerializer(serializers.Serializer):
     label = ShipmentLabelSerializer(read_only=True)
     description = serializers.CharField(read_only=True)
     cost = serializers.DecimalField(10, decimal_places=3, read_only=True)
-    tracking_number = serializers.IntegerField(read_only=True)
+    tracking_number = serializers.CharField(read_only=True)
     shipment_canceled = serializers.BooleanField(read_only=True)
     date_picked_up = serializers.DateTimeField(read_only=True)
     date_created = serializers.DateTimeField(read_only=True)

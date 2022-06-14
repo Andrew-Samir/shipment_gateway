@@ -1,3 +1,4 @@
+from shipment_gateway.settings import FEDEX_ACCOUNT_NUMBER
 from ._base_interface_ import ICourier
 from ..models import Shipment, Shipment_StatusChoises
 from ..integration import FedexServices
@@ -82,7 +83,7 @@ class FedEx(ICourier):
                 ]
             },
             "accountNumber": {
-                "value": "740561073"
+                "value": FEDEX_ACCOUNT_NUMBER
             }
             }
         response = FedexServices().create_shipment(payload)
@@ -100,7 +101,7 @@ class FedEx(ICourier):
     def cancel_shipment(self, tracking_number):
         payload = {
             "accountNumber": {
-                "value": "740561073"
+                "value": FEDEX_ACCOUNT_NUMBER
             },
             "trackingNumber": tracking_number
             }
