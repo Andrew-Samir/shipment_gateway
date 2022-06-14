@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from shipment_gateway.settings import PRICE_PER_KG
 from ..serializers import UserSerializer, ShipmentLabelSerializer, ProductSerializer, CourierSerializer
-from ..models import User, Product, Shipment, ShipmentLabel, Courier
+from ..models import User, Product, Shipment, ShipmentLabel, Courier, Shipment_StatusChoises
 from ..repos import UserRepo, ProductRepo, CourierRepo
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -21,7 +21,8 @@ class ShipmentSerializer(serializers.Serializer):
     label = ShipmentLabelSerializer(read_only=True)
     description = serializers.CharField(read_only=True)
     cost = serializers.DecimalField(10, decimal_places=3, read_only=True)
-
+    tracking_number = serializers.IntegerField(read_only=True)
+    shipment_canceled = serializers.BooleanField(read_only=True)
     date_picked_up = serializers.DateTimeField(read_only=True)
     date_created = serializers.DateTimeField(read_only=True)
     date_modified = serializers.DateTimeField(read_only=True)
@@ -86,25 +87,27 @@ class ShipmentCreateSerializer(serializers.Serializer):
 
 ## Update Serializer ##
 class ShipmentUpdateSerializer(serializers.Serializer):
-    shipment_canceled = serializers.BooleanField(required=False, help_text='cancel shipment.')
+    cancel_shipment = serializers.BooleanField(required=False, help_text='cancel shipment.')
     status = serializers.CharField(required=False, help_text='status.')
 
-    def validate(self, data):
-        errors = {}
-        if 'shipment_canceled' in data and data['shipment_canceled']:
-            print(self.instance.courier.can_cancel_shipment)
+    def validate_cancel_shipment(self, cancel_shipment):
+        if cancel_shipment:
             if self.instance.courier is not None and not self.instance.courier.can_cancel_shipment:
-                errors['shipment_canceled'] = ['Unable to cancel shipment']
-        if len(errors.keys()) > 0: raise ValidationError(errors)
-        return data
+                raise ValidationError('Unable to cancel shipment')
+            if self.instance.shipment_canceled:
+                raise ValidationError('Shipment already canceled')
+        return cancel_shipment
+    
+    def validate_status(self, status):
+        if status is not None:
+            if status not in [Shipment_StatusChoises[0][0], Shipment_StatusChoises[1][0], Shipment_StatusChoises[2][0]]:
+                raise ValidationError('Invalid Status, status should be processing , in transit or shipped')
+        return status
 
     def update(self, instance, validated_data):
-        print(self.context['request'].user)
-        instance.shipment_canceled = validated_data.get('shipment_canceled', instance.shipment_canceled)
+        instance.shipment_canceled = validated_data.get('cancel_shipment', instance.shipment_canceled)
         instance.status = validated_data.get('status', instance.status)
         instance.save()
-
-
         return instance
 
     class Meta:

@@ -17,6 +17,6 @@ class ShipmentLabelSerializer(serializers.Serializer):
     weight = serializers.DecimalField(5, decimal_places=3, read_only=True)
     comment = serializers.CharField(read_only=True)
     cost = serializers.DecimalField(10, decimal_places=3, read_only=True)
-
+    
     date_created = serializers.DateTimeField(read_only=True)
     date_modified = serializers.DateTimeField(read_only=True)
